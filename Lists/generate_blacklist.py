@@ -1,23 +1,26 @@
 import requests
 import tarfile
-import os
 import json
 import shutil
 from pathlib import Path
 
 BLACKLIST_URL = "http://dsi.ut-capitole.fr/blacklists/download/blacklists.tar.gz"
 TARGET_CATEGORIES = [
-    'phishing', 'malware', 'scam', 'crypto', 'bitcoin', 'cryptojacking', 
+    'phishing', 'malware', 'scam', 'crypto', 'bitcoin', 'cryptojacking',
     'ddos', 'fakenews', 'hacking'
 ]
 
-BLACKLIST_FILE_NAME = "blacklist.json"
+OUTPUT_DIR = Path(__file__).parent
 
 def generate_blacklists():
-    print("Iniciando a geração da blacklist...")
+    """
+    Baixa, extrai e processa listas de domínios maliciosos,
+    gerando um ficheiro JSON separado para cada categoria.
+    """
+    print("Iniciando a geração das blacklists...")
 
-    download_path = Path("blacklists.tar.gz")
-    temp_extract_folder = Path("blacklists_extracted")
+    download_path = OUTPUT_DIR / "blacklists.tar.gz"
+    temp_extract_folder = OUTPUT_DIR / "blacklists_extracted"
 
     print(f"Baixando a lista de {BLACKLIST_URL}...")
     try:
@@ -30,14 +33,17 @@ def generate_blacklists():
         print(f"Erro ao baixar a lista: {e}")
         return
 
+    if temp_extract_folder.exists():
+        shutil.rmtree(temp_extract_folder)
+    temp_extract_folder.mkdir()
+    
     print("Extraindo arquivos...")
     with tarfile.open(download_path, "r:gz") as tar:
         tar.extractall(path=temp_extract_folder)
     
-    print("Processando categorias e agregando domínios...")
+    print("Processando categorias e gerando arquivos JSON...")
     base_path = temp_extract_folder / "blacklists"
-    all_malicious_domains = {}
-
+    
     for category in TARGET_CATEGORIES:
         clean_category = category.strip()
         if not clean_category:
@@ -46,27 +52,25 @@ def generate_blacklists():
         domains_file = base_path / clean_category / "domains"
         
         if domains_file.exists():
-            count = 0
+            category_sites = {}
             with open(domains_file, 'r', encoding='utf-8') as f:
                 for domain in f:
                     domain = domain.strip()
                     if domain:
-                        all_malicious_domains[domain] = clean_category
-                        count += 1
-            print(f"-> Categoria '{clean_category}' processada com {count} domínios.")
+                        category_sites[domain] = clean_category
+            
+            output_path = OUTPUT_DIR / f'{clean_category}.json'
+            with open(output_path, 'w', encoding='utf-8') as f:
+                json.dump(category_sites, f)
+            print(f"-> Arquivo '{output_path.name}' criado com {len(category_sites)} domínios.")
         else:
             print(f"-> Aviso: Categoria '{clean_category}' não encontrada.")
-    
-    output_path = BLACKLIST_FILE_NAME
-    print(f"\nGravando {len(all_malicious_domains)} domínios únicos em '{output_path}'...")
-    with open(output_path, 'w', encoding='utf-8') as f:
-        json.dump(all_malicious_domains, f, indent=2)
 
     print("Limpando arquivos temporários...")
     download_path.unlink()
     shutil.rmtree(temp_extract_folder)
     
-    print("\n✅ Sucesso! A blacklist foi gerada.")
+    print("\n✅ Sucesso! As blacklists foram geradas na pasta 'Lists'.")
 
 if __name__ == "__main__":
     generate_blacklists()
