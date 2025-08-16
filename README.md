@@ -1,4 +1,4 @@
-# ProtechTech Plugin
+# ProtechTech
 
 Um projeto de extensão para Google Chrome desenvolvido para proteger os usuários contra sites maliciosos, como phishing, scams e outras ameaças online.
 
@@ -10,8 +10,8 @@ Esta extensão atua como um filtro de navegação, bloqueando ativamente o acess
 
 * **Bloqueio por Categorias:** Bloqueia sites que se enquadram em diversas categorias de ameaças, como:
     * Phishing
-    * Scam (Golpes)
-    * e muito mais (ainda em analise para desemvolvimento)
+    * Scam
+    * e muito mais (ainda em analise para desenvolvimento)
 
 * **Listas Personalizadas:** Permite que o usuário crie suas próprias regras:
     * **Lista de Bloqueio (Blocklist):** Adicione qualquer site que você deseja bloquear permanentemente.
@@ -33,7 +33,7 @@ Para carregar a extensão no navegador em modo de desenvolvimento:
 2.  Ative o **"Modo de desenvolvedor"** no canto superior direito da página.
 3.  Clique no botão **"Carregar sem compactação"** (Load unpacked).
 4.  Uma janela para selecionar a pasta irá abrir. Selecione a pasta raiz do seu projeto (a que contém o `manifest.json`).
-5.  A extensão "Phishing & Scam Blocker" aparecerá na sua lista de extensões e estará pronta para uso.
+5.  A extensão "ProtechTech" aparecerá na sua lista de extensões e estará pronta para uso.
 
 ##### CONTRIBUTORS
 * ProtechTech
