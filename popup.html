@@ -1,19 +1,33 @@
 <!DOCTYPE html>
-<html lang="pt">
+<html lang="pt-br">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ProtechTech</title>
     <link rel="stylesheet" href="popup.css">
 </head>
 <body>
     <div class="container">
-        <h1>ProtechTech</h1>
+        <div class="header">
+            <img src="icons/icon48.png" alt="Logo ProtechTech">
+            <h1>ProtechTech</h1>
+        </div>
         <div class="toggle-container">
             <label class="switch">
                 <input type="checkbox" id="toggleSwitch">
                 <span class="slider round"></span>
             </label>
-            <span id="statusText">Ativado</span>
+            <span id="statusText">Carregando...</span>
+        </div>
+        <hr>
+        <div class="custom-blacklist">
+            <h2>Sua Lista de Bloqueio</h2>
+            <div class="input-group">
+                <input type="text" id="domainInput" placeholder="exemplo.com">
+                <button id="addDomainBtn">Adicionar</button>
+            </div>
+            <ul id="customBlacklistUI">
+                </ul>
         </div>
     </div>
     <script src="popup.js"></script>
