@@ -6,7 +6,7 @@
   "permissions": [
     "storage",
     "webNavigation",
-    "activeTab" 
+    "activeTab"
   ],
   "background": {
     "service_worker": "background.js"
@@ -22,9 +22,12 @@
   "web_accessible_resources": [
     {
       "resources": [
-        "phishing.json", "malware.json", "scam.json", "crypto.json", "bitcoin.json", "cryptojacking.json", "ddos.json", "fakenews.json", "hacking.json"
+        "Lists/*.json",
+        "blocked.html"
       ],
-      "matches": [ "<all_urls>" ]
+      "matches": [
+        "<all_urls>"
+      ]
     }
   ]
 }
