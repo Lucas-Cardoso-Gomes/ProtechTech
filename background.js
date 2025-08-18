@@ -1,54 +1,57 @@
 const TARGET_CATEGORIES = [
-    'phishing', 'malware', 'scam', 'crypto', 'bitcoin', 'cryptojacking', 'ddos', 'fakenews', 'hacking'
+    'phishing', 'malware', 'scam', 'crypto', 'bitcoin', 'cryptojacking',
+    'ddos', 'fakenews', 'hacking'
 ];
 
 let inMemoryMainBlacklist = {};
 let inMemoryUserBlacklist = [];
 
 async function updateInMemoryBlacklists() {
-    console.time("Tempo de leitura e carregamento na memória");
+    console.time("Tempo para carregar blacklists do storage para a memória");
     const data = await chrome.storage.local.get(['mainBlacklist', 'userBlacklist']);
     inMemoryMainBlacklist = data.mainBlacklist || {};
     inMemoryUserBlacklist = data.userBlacklist || [];
     console.log("Blacklists foram atualizadas na memória.");
-    console.timeEnd("Tempo de leitura e carregamento na memória");
+    console.timeEnd("Tempo para carregar blacklists do storage para a memória");
 }
 
 async function loadInitialBlacklists() {
     console.log("Iniciando carregamento das blacklists do disco...");
     let allMaliciousDomains = {};
 
-    console.time("Tempo de leitura e carregamento dos JSONs");
+    console.time("Tempo para buscar e processar todos os JSONs");
     for (const category of TARGET_CATEGORIES) {
         try {
             const response = await fetch(chrome.runtime.getURL(`Lists/${category}.json`));
             if (response.ok) {
                 const domains = await response.json();
                 Object.assign(allMaliciousDomains, domains);
-            } else {
-                console.warn(`Aviso: Não foi possível carregar a lista para a categoria '${category}'.`);
             }
         } catch (error) {
             console.warn(`Erro ao carregar a lista para '${category}':`, error);
         }
     }
-    console.timeEnd("Tempo de leitura e carregamento dos JSONs");
+    console.timeEnd("Tempo para buscar e processar todos os JSONs");
     
-    console.time("Tempo de carregamento em RAM JSONs");
+    console.time("Tempo para salvar blacklists no storage");
     await chrome.storage.local.set({ mainBlacklist: allMaliciousDomains });
     await chrome.storage.local.get({ userBlacklist: [] }, (data) => {
         chrome.storage.local.set({ userBlacklist: data.userBlacklist });
     });
-    console.timeEnd("Tempo de carregamento em RAM JSONs");
+    console.timeEnd("Tempo para salvar blacklists no storage");
     
-    console.log(`Carregamento do disco concluído. Total de ${Object.keys(allMaliciousDomains).length} domínios na lista principal.`);
-    
+    console.log(`Carregamento do disco concluído. Total de ${Object.keys(allMaliciousDomains).length} domínios.`);
     await updateInMemoryBlacklists();
 }
 
-function handleNavigation(details) {
+async function handleNavigation(details) {
     if (details.frameId !== 0) {
         return;
+    }
+
+    if (Object.keys(inMemoryMainBlacklist).length === 0) {
+        console.log("Service Worker acordou. Recarregando blacklists para a memória...");
+        await updateInMemoryBlacklists();
     }
 
     const url = new URL(details.url);
@@ -66,8 +69,10 @@ function handleNavigation(details) {
 }
 
 function enableBlocking() {
-    chrome.webNavigation.onBeforeNavigate.addListener(handleNavigation);
-    console.log("Bloqueio ativado.");
+    if (!chrome.webNavigation.onBeforeNavigate.hasListener(handleNavigation)) {
+        chrome.webNavigation.onBeforeNavigate.addListener(handleNavigation);
+        console.log("Bloqueio ativado.");
+    }
 }
 
 function disableBlocking() {
@@ -75,8 +80,8 @@ function disableBlocking() {
     console.log("Bloqueio desativado.");
 }
 
-chrome.runtime.onInstalled.addListener(async () => {
-    console.log("Evento 'onInstalled' disparado.");
+chrome.runtime.onInstalled.addListener(async (details) => {
+    console.log("Evento 'onInstalled' disparado:", details.reason);
     console.time("Tempo total do processo de instalação");
     
     await loadInitialBlacklists();
@@ -89,7 +94,7 @@ chrome.runtime.onInstalled.addListener(async () => {
 });
 
 chrome.runtime.onStartup.addListener(async () => {
-    console.log("Evento 'onStartup' disparado.");
+    console.log("Evento 'onStartup' (navegador iniciado).");
     console.time("Tempo total do processo de inicialização (onStartup)");
     
     await updateInMemoryBlacklists();
@@ -117,5 +122,11 @@ chrome.storage.onChanged.addListener((changes, namespace) => {
     if (changes.userBlacklist) {
         console.log("Lista do usuário foi modificada, atualizando a memória...");
         updateInMemoryBlacklists();
+    }
+});
+
+chrome.storage.local.get('isEnabled', ({ isEnabled }) => {
+    if (isEnabled) {
+        enableBlocking();
     }
 });
