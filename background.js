@@ -20,29 +20,37 @@ async function loadBlacklists() {
             console.warn(`Erro ao carregar a lista para '${category}':`, error);
         }
     }
+    await chrome.storage.local.set({ mainBlacklist: allMaliciousDomains });
+    await chrome.storage.local.get({ userBlacklist: [] }, (data) => {
+        chrome.storage.local.set({ userBlacklist: data.userBlacklist });
+    });
 
-    await chrome.storage.local.set({ blacklist: allMaliciousDomains });
-    console.log(`Carregamento concluído. Total de ${Object.keys(allMaliciousDomains).length} domínios.`);
+    console.log(`Carregamento concluído. Total de ${Object.keys(allMaliciousDomains).length} domínios na lista principal.`);
 }
+
 
 async function handleNavigation(details) {
     if (details.frameId !== 0) {
         return;
     }
 
-    const { blacklist } = await chrome.storage.local.get('blacklist');
-    if (!blacklist) return;
+    const { mainBlacklist, userBlacklist } = await chrome.storage.local.get(['mainBlacklist', 'userBlacklist']);
+    if (!mainBlacklist && !userBlacklist) return;
 
     const url = new URL(details.url);
     const domain = url.hostname.startsWith('www.') ? url.hostname.substring(4) : url.hostname;
 
-    if (blacklist[domain]) {
-        const category = blacklist[domain];
+    const mainCategory = mainBlacklist ? mainBlacklist[domain] : undefined;
+    const inUserBlacklist = userBlacklist ? userBlacklist.includes(domain) : false;
+
+    if (mainCategory || inUserBlacklist) {
+        const category = mainCategory || 'personalizada';
         const blockedPageUrl = chrome.runtime.getURL(`blocked.html?domain=${domain}&category=${category}`);
 
         chrome.tabs.update(details.tabId, { url: blockedPageUrl });
     }
 }
+
 
 function enableBlocking() {
     chrome.webNavigation.onBeforeNavigate.addListener(handleNavigation);
