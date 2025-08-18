@@ -68,3 +68,14 @@ chrome.runtime.onStartup.addListener(() => {
         }
     });
 });
+
+chrome.storage.onChanged.addListener((changes, namespace) => {
+    if (namespace === 'local' && changes.isEnabled) {
+        const newState = changes.isEnabled.newValue;
+        if (newState) {
+            enableBlocking();
+        } else {
+            disableBlocking();
+        }
+    }
+});
