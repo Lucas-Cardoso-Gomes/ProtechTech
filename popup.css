@@ -1,37 +1,51 @@
 body {
     font-family: Arial, sans-serif;
-    width: 250px;
+    width: 300px;
     padding: 10px;
     background-color: #f4f4f9;
 }
 
 .container {
-    text-align: center;
+    display: flex;
+    flex-direction: column;
 }
 
-h1 {
-    font-size: 18px;
+.header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.header img {
+    width: 40px;
+    height: 40px;
+    margin-right: 10px;
+}
+
+.header h1 {
+    font-size: 1.2em;
+    margin: 0;
     color: #333;
 }
 
 .toggle-container {
     display: flex;
     align-items: center;
-    justify-content: center;
-    margin-top: 15px;
+    justify-content: space-between;
+    margin-bottom: 15px;
 }
 
 #statusText {
-    margin-left: 15px;
-    font-size: 16px;
+    font-size: 1em;
     font-weight: bold;
+    color: #555;
 }
 
 .switch {
     position: relative;
     display: inline-block;
-    width: 60px;
-    height: 34px;
+    width: 50px;
+    height: 24px;
 }
 
 .switch input {
@@ -54,8 +68,8 @@ h1 {
 .slider:before {
     position: absolute;
     content: "";
-    height: 26px;
-    width: 26px;
+    height: 16px;
+    width: 16px;
     left: 4px;
     bottom: 4px;
     background-color: white;
@@ -76,4 +90,78 @@ input:checked + .slider:before {
 
 .slider.round:before {
     border-radius: 50%;
+}
+
+hr {
+    border: 0;
+    height: 1px;
+    background: #ddd;
+    margin-bottom: 15px;
+}
+
+.custom-blacklist h2 {
+    font-size: 1.1em;
+    color: #333;
+    margin-bottom: 10px;
+}
+
+.input-group {
+    display: flex;
+    margin-bottom: 10px;
+}
+
+#domainInput {
+    flex-grow: 1;
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+#addDomainBtn {
+    padding: 5px 10px;
+    border: none;
+    background-color: #2196F3;
+    color: white;
+    border-radius: 4px;
+    margin-left: 5px;
+    cursor: pointer;
+}
+
+#addDomainBtn:hover {
+    background-color: #1976D2;
+}
+
+#customBlacklistUI {
+    list-style: none;
+    padding: 0;
+    max-height: 150px;
+    overflow-y: auto;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+#customBlacklistUI li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px;
+    border-bottom: 1px solid #eee;
+}
+
+#customBlacklistUI li:last-child {
+    border-bottom: none;
+}
+
+.remove-btn {
+    background: #f44336;
+    color: white;
+    border: none;
+    padding: 3px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.remove-btn:hover {
+    background: #d32f2f;
 }
