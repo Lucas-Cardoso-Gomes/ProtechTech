@@ -19,7 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     const renderBlacklist = (blacklist) => {
-        customBlacklistUI.innerHTML = '';=
+        customBlacklistUI.innerHTML = '';
         if (blacklist && blacklist.length > 0) {
             blacklist.forEach(domain => {
                 const li = document.createElement('li');
