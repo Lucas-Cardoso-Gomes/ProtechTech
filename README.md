@@ -32,7 +32,7 @@ Para carregar a extensão no navegador em modo de desenvolvimento:
 1.  Abra o Google Chrome e acesse a página de extensões: `chrome://extensions`.
 2.  Ative o **"Modo de desenvolvedor"** no canto superior direito da página.
 3.  Clique no botão **"Carregar sem compactação"** (Load unpacked).
-4.  Uma janela para selecionar a pasta irá abrir. Selecione a pasta raiz do seu projeto (a que contém o `manifest.json`).
+4.  Selecione a pasta raiz do seu projeto (a que contém o `manifest.json`).
 5.  A extensão "ProtechTech" aparecerá na sua lista de extensões e estará pronta para uso.
 
 ##### CONTRIBUTORS
