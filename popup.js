@@ -6,6 +6,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const customBlacklistUI = document.getElementById('customBlacklistUI');
 
     chrome.storage.local.get('isEnabled', ({ isEnabled }) => {
+        isEnabled = true;
         toggleSwitch.checked = !!isEnabled;
         statusText.textContent = isEnabled ? 'Ativado' : 'Desativado';
     });

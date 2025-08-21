@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "ProtechTech",
-  "version": "0.1",
+  "version": "0.2",
   "description": "Bloqueia ativamente sites de phishing e golpes usando uma blacklist atualizada e personalizável.",
   "permissions": [
     "storage",

@@ -11,17 +11,15 @@ Esta extensão atua como um filtro de navegação, bloqueando ativamente o acess
 * **Bloqueio por Categorias:** Bloqueia sites que se enquadram em diversas categorias de ameaças, como:
     * Phishing
     * Scam
+    * Malware
+    * Fakenews
     * e muito mais (ainda em analise para desenvolvimento)
 
 * **Listas Personalizadas:** Permite que o usuário crie suas próprias regras:
     * **Lista de Bloqueio (Blocklist):** Adicione qualquer site que você deseja bloquear permanentemente.
-    * **Lista de Permissão (Allowlist):** Garanta o acesso a sites que você confia, mesmo que eles estejam em uma lista de categoria. A lista de permissão tem prioridade máxima.
 
 * **Interface Simplificada:** Um popup de fácil acesso permite:
-    * Ver o domínio da página atual.
-    * Adicionar rapidamente o site atual às listas de bloqueio ou permissão.
-    * Adicionar manualmente qualquer domínio.
-    * Ativar ou desativar as categorias de bloqueio.
+    * Adicionar rapidamente o site atual às listas de bloqueio.
 
 * **Página de Bloqueio Informativa:** Ao bloquear um site, o usuário é redirecionado para uma página que informa claramente o domínio bloqueado e o motivo (a categoria da ameaça ou bloqueio pessoal).
 
