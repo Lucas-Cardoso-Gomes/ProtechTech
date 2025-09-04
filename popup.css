@@ -165,3 +165,75 @@ hr {
 .remove-btn:hover {
     background: #d32f2f;
 }
+
+.hidden {
+    display: none;
+}
+
+.settings-btn {
+    margin-left: auto;
+    font-size: 20px;
+    text-decoration: none;
+    color: #333;
+}
+
+.settings-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.back-btn {
+    font-size: 16px;
+    text-decoration: none;
+    color: #333;
+    margin-right: 10px;
+}
+
+#category-toggles {
+    display: flex;
+    flex-direction: column;
+}
+
+.category-toggle {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px 0;
+}
+
+.news-feed {
+    margin-top: 15px;
+}
+
+.news-feed h2 {
+    font-size: 1.1em;
+    color: #333;
+    margin-bottom: 10px;
+}
+
+#news-container {
+    max-height: 100px;
+    overflow-y: auto;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 10px;
+}
+
+.news-item {
+    margin-bottom: 10px;
+}
+
+.news-item:last-child {
+    margin-bottom: 0;
+}
+
+.news-item-title {
+    font-weight: bold;
+}
+
+.news-item-description {
+    font-size: 0.9em;
+    color: #555;
+}

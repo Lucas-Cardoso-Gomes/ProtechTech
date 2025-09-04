@@ -11,23 +11,41 @@
         <div class="header">
             <img src="icons/icon48.png" alt="Logo ProtechTech">
             <h1>ProtechTech</h1>
+            <a href="#" id="settingsBtn" class="settings-btn">⚙️</a>
         </div>
-        <div class="toggle-container">
-            <label class="switch">
-                <input type="checkbox" id="toggleSwitch">
-                <span class="slider round"></span>
-            </label>
-            <span id="statusText">Carregando...</span>
-        </div>
-        <hr>
-        <div class="custom-blacklist">
-            <h2>Sua Lista de Bloqueio</h2>
-            <div class="input-group">
-                <input type="text" id="domainInput" placeholder="exemplo.com">
-                <button id="addDomainBtn">Adicionar</button>
+
+        <div id="main-view">
+            <div class="toggle-container">
+                <label class="switch">
+                    <input type="checkbox" id="toggleSwitch">
+                    <span class="slider round"></span>
+                </label>
+                <span id="statusText">Carregando...</span>
             </div>
-            <ul id="customBlacklistUI">
-                </ul>
+            <hr>
+            <div class="news-feed">
+                <h2>Notícias de Segurança</h2>
+                <div id="news-container"></div>
+            </div>
+        </div>
+
+        <div id="settings-view" class="hidden">
+            <div class="settings-header">
+                <a href="#" id="backBtn" class="back-btn">← Voltar</a>
+                <h2>Configurações</h2>
+            </div>
+            <div id="category-toggles">
+                <h3>Bloqueio por Categoria</h3>
+            </div>
+            <hr>
+            <div class="custom-blacklist">
+                <h2>Sua Lista de Bloqueio</h2>
+                <div class="input-group">
+                    <input type="text" id="domainInput" placeholder="exemplo.com">
+                    <button id="addDomainBtn">Adicionar</button>
+                </div>
+                <ul id="customBlacklistUI"></ul>
+            </div>
         </div>
     </div>
     <script src="popup.js"></script>

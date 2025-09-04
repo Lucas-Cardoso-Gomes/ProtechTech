@@ -5,12 +5,20 @@ const TARGET_CATEGORIES = [
 
 let inMemoryMainBlacklist = {};
 let inMemoryUserBlacklist = [];
+let inMemoryBlockedCategories = [];
+let inMemoryIsCustomListEnabled = true;
+let inMemoryIsEnabled = true;
+let blacklistsLoaded = false;
 
-async function updateInMemoryBlacklists() {
+async function updateInMemoryState() {
     console.time("Tempo para carregar blacklists do storage para a memória");
-    const data = await chrome.storage.local.get(['mainBlacklist', 'userBlacklist']);
+    const data = await chrome.storage.local.get(['mainBlacklist', 'userBlacklist', 'blockedCategories', 'isCustomListEnabled', 'isEnabled']);
     inMemoryMainBlacklist = data.mainBlacklist || {};
     inMemoryUserBlacklist = data.userBlacklist || [];
+    inMemoryBlockedCategories = data.blockedCategories || [];
+    inMemoryIsCustomListEnabled = data.isCustomListEnabled !== false;
+    inMemoryIsEnabled = data.isEnabled !== false;
+    blacklistsLoaded = true;
     console.log("Blacklists foram atualizadas na memória.");
     console.timeEnd("Tempo para carregar blacklists do storage para a memória");
 }
@@ -35,13 +43,17 @@ async function loadInitialBlacklists() {
     
     console.time("Tempo para salvar blacklists no storage");
     await chrome.storage.local.set({ mainBlacklist: allMaliciousDomains });
-    await chrome.storage.local.get({ userBlacklist: [] }, (data) => {
-        chrome.storage.local.set({ userBlacklist: data.userBlacklist });
+    const data = await chrome.storage.local.get({ 
+        userBlacklist: [], 
+        blockedCategories: TARGET_CATEGORIES,
+        isCustomListEnabled: true,
+        isEnabled: true
     });
+    await chrome.storage.local.set(data);
     console.timeEnd("Tempo para salvar blacklists no storage");
     
     console.log(`Carregamento do disco concluído. Total de ${Object.keys(allMaliciousDomains).length} domínios.`);
-    await updateInMemoryBlacklists();
+    await updateInMemoryState();
 }
 
 async function handleNavigation(details) {
@@ -49,84 +61,62 @@ async function handleNavigation(details) {
         return;
     }
 
-    if (Object.keys(inMemoryMainBlacklist).length === 0) {
-        console.log("Service Worker acordou. Recarregando blacklists para a memória...");
-        await updateInMemoryBlacklists();
+    if (!blacklistsLoaded) {
+        console.log("Service Worker acordou ou blacklists não carregadas. Recarregando para a memória...");
+        await updateInMemoryState();
+    }
+
+    if (!inMemoryIsEnabled) {
+        return; // Do nothing if the extension is disabled
     }
 
     const url = new URL(details.url);
     const domain = url.hostname.startsWith('www.') ? url.hostname.substring(4) : url.hostname;
 
-    const mainCategory = inMemoryMainBlacklist[domain];
-    const inUserBlacklist = inMemoryUserBlacklist.includes(domain);
+    let blockReason = null;
 
-    if (mainCategory || inUserBlacklist) {
-        const category = mainCategory || 'personalizada';
-        const blockedPageUrl = chrome.runtime.getURL(`blocked.html?domain=${domain}&category=${category}`);
+    // Check custom list first for precedence
+    if (inMemoryIsCustomListEnabled && inMemoryUserBlacklist.includes(domain)) {
+        blockReason = { domain: domain, category: 'personalizada' };
+    }
 
+    // If not on custom list, check main category list
+    if (!blockReason) {
+        const domainCategory = inMemoryMainBlacklist[domain];
+        if (domainCategory && inMemoryBlockedCategories.includes(domainCategory)) {
+            blockReason = { domain: domain, category: domainCategory };
+        }
+    }
+    
+    if (blockReason) {
+        const blockedPageUrl = chrome.runtime.getURL(`blocked.html?domain=${blockReason.domain}&category=${blockReason.category}`);
         chrome.tabs.update(details.tabId, { url: blockedPageUrl });
     }
 }
 
-function enableBlocking() {
-    if (!chrome.webNavigation.onBeforeNavigate.hasListener(handleNavigation)) {
-        chrome.webNavigation.onBeforeNavigate.addListener(handleNavigation);
-        console.log("Bloqueio ativado.");
-    }
-}
-
-function disableBlocking() {
-    chrome.webNavigation.onBeforeNavigate.removeListener(handleNavigation);
-    console.log("Bloqueio desativado.");
-}
-
 chrome.runtime.onInstalled.addListener(async (details) => {
     console.log("Evento 'onInstalled' disparado:", details.reason);
-    console.time("Tempo total do processo de instalação");
-    
     await loadInitialBlacklists();
-    
-    chrome.storage.local.set({ isEnabled: true }, () => {
-        enableBlocking();
-        console.log("Instalação concluída e bloqueio ativado.");
-        console.timeEnd("Tempo total do processo de instalação");
-    });
+    chrome.webNavigation.onBeforeNavigate.addListener(handleNavigation);
+    console.log("Instalação concluída e bloqueio ativado.");
 });
 
 chrome.runtime.onStartup.addListener(async () => {
     console.log("Evento 'onStartup' (navegador iniciado).");
-    console.time("Tempo total do processo de inicialização (onStartup)");
-    
-    await updateInMemoryBlacklists();
-    
-    chrome.storage.local.get('isEnabled', ({ isEnabled }) => {
-        if (isEnabled) {
-            enableBlocking();
-        }
-    });
-    console.timeEnd("Tempo total do processo de inicialização (onStartup)");
+    await updateInMemoryState();
+    if (!chrome.webNavigation.onBeforeNavigate.hasListener(handleNavigation)) {
+        chrome.webNavigation.onBeforeNavigate.addListener(handleNavigation);
+    }
 });
 
 chrome.storage.onChanged.addListener((changes, namespace) => {
     if (namespace !== 'local') return;
-
-    if (changes.isEnabled) {
-        const newState = changes.isEnabled.newValue;
-        if (newState) {
-            enableBlocking();
-        } else {
-            disableBlocking();
-        }
-    }
     
-    if (changes.userBlacklist) {
-        console.log("Lista do usuário foi modificada, atualizando a memória...");
-        updateInMemoryBlacklists();
-    }
+    console.log("Configurações foram modificadas, atualizando a memória...");
+    updateInMemoryState();
 });
 
-chrome.storage.local.get('isEnabled', ({ isEnabled }) => {
-    if (isEnabled) {
-        enableBlocking();
-    }
-});
+// Ensures the listener is active on initial load, in case the extension was updated
+if (!chrome.webNavigation.onBeforeNavigate.hasListener(handleNavigation)) {
+    chrome.webNavigation.onBeforeNavigate.addListener(handleNavigation);
+}

@@ -1,12 +1,25 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // General elements
     const toggleSwitch = document.getElementById('toggleSwitch');
     const statusText = document.getElementById('statusText');
+
+    // Main view elements
     const domainInput = document.getElementById('domainInput');
     const addDomainBtn = document.getElementById('addDomainBtn');
     const customBlacklistUI = document.getElementById('customBlacklistUI');
+    const newsContainer = document.getElementById('news-container');
 
+    // View switching elements
+    const settingsBtn = document.getElementById('settingsBtn');
+    const backBtn = document.getElementById('backBtn');
+    const mainView = document.getElementById('main-view');
+    const settingsView = document.getElementById('settings-view');
+
+    // Settings view elements
+    const categoryTogglesContainer = document.getElementById('category-toggles');
+
+    // --- General Extension State ---
     chrome.storage.local.get('isEnabled', ({ isEnabled }) => {
-        isEnabled = true;
         toggleSwitch.checked = !!isEnabled;
         statusText.textContent = isEnabled ? 'Ativado' : 'Desativado';
     });
@@ -15,24 +28,33 @@ document.addEventListener('DOMContentLoaded', () => {
         const newState = toggleSwitch.checked;
         chrome.storage.local.set({ isEnabled: newState }, () => {
             statusText.textContent = newState ? 'Ativado' : 'Desativado';
-            console.log(`Estado da extensão alterado para: ${newState}`);
         });
     });
 
+    // --- View Switching ---
+    settingsBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        mainView.classList.add('hidden');
+        settingsView.classList.remove('hidden');
+    });
+
+    backBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        settingsView.classList.add('hidden');
+        mainView.classList.remove('hidden');
+    });
+
+    // --- Custom Blacklist ---
     const renderBlacklist = (blacklist) => {
         customBlacklistUI.innerHTML = '';
         if (blacklist && blacklist.length > 0) {
             blacklist.forEach(domain => {
                 const li = document.createElement('li');
                 li.textContent = domain;
-
                 const removeBtn = document.createElement('button');
                 removeBtn.textContent = 'Remover';
                 removeBtn.className = 'remove-btn';
-                removeBtn.addEventListener('click', () => {
-                    removeDomain(domain);
-                });
-
+                removeBtn.addEventListener('click', () => removeDomain(domain));
                 li.appendChild(removeBtn);
                 customBlacklistUI.appendChild(li);
             });
@@ -77,8 +99,95 @@ document.addEventListener('DOMContentLoaded', () => {
 
     addDomainBtn.addEventListener('click', addDomain);
     domainInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-            addDomain();
-        }
+        if (e.key === 'Enter') addDomain();
     });
+
+    // --- News Feed ---
+    const mockNews = [
+        { title: "Novo golpe de phishing usa IA", description: "Fique atento a e-mails que parecem muito realistas." },
+        { title: "Ataques de ransomware em alta", description: "Empresas de tecnologia são os alvos principais." },
+        { title: "Falha de segurança em app popular", description: "Atualize seu aplicativo imediatamente para se proteger." }
+    ];
+
+    const renderNews = (news) => {
+        newsContainer.innerHTML = '';
+        news.forEach(item => {
+            const newsItem = document.createElement('div');
+            newsItem.className = 'news-item';
+            const title = document.createElement('div');
+            title.className = 'news-item-title';
+            title.textContent = item.title;
+            const desc = document.createElement('div');
+            desc.className = 'news-item-description';
+            desc.textContent = item.description;
+            newsItem.appendChild(title);
+            newsItem.appendChild(desc);
+            newsContainer.appendChild(newsItem);
+        });
+    };
+
+    renderNews(mockNews);
+
+    // --- Category Toggles ---
+    const categories = [
+        'phishing', 'malware', 'scam', 'crypto', 'bitcoin', 'cryptojacking',
+        'ddos', 'fakenews', 'hacking', 'gambling'
+    ];
+
+    const createToggle = (labelText, isChecked, onToggle) => {
+        const toggleContainer = document.createElement('div');
+        toggleContainer.className = 'category-toggle';
+
+        const label = document.createElement('span');
+        label.textContent = labelText;
+
+        const switchLabel = document.createElement('label');
+        switchLabel.className = 'switch';
+        const input = document.createElement('input');
+        input.type = 'checkbox';
+        input.checked = isChecked;
+        input.addEventListener('change', () => onToggle(input.checked));
+
+        const slider = document.createElement('span');
+        slider.className = 'slider round';
+
+        switchLabel.appendChild(input);
+        switchLabel.appendChild(slider);
+        toggleContainer.appendChild(label);
+        toggleContainer.appendChild(switchLabel);
+        return toggleContainer;
+    };
+
+    const renderToggles = ({ blockedCategories = [], isCustomListEnabled = true }) => {
+        categoryTogglesContainer.innerHTML = '<h3>Bloqueio por Categoria</h3>';
+        
+        // Render Custom List Toggle
+        const customListToggle = createToggle('Lista Personalizada', isCustomListEnabled, (isChecked) => {
+            chrome.storage.local.set({ isCustomListEnabled: isChecked });
+        });
+        categoryTogglesContainer.appendChild(customListToggle);
+
+        // Render Category Toggles
+        let currentBlocked = [...blockedCategories];
+        categories.forEach(category => {
+            const isBlocked = currentBlocked.includes(category);
+            const categoryToggle = createToggle(
+                category.charAt(0).toUpperCase() + category.slice(1),
+                isBlocked,
+                (isChecked) => {
+                    if (isChecked) {
+                        if (!currentBlocked.includes(category)) {
+                            currentBlocked.push(category);
+                        }
+                    } else {
+                        currentBlocked = currentBlocked.filter(c => c !== category);
+                    }
+                    chrome.storage.local.set({ blockedCategories: currentBlocked });
+                }
+            );
+            categoryTogglesContainer.appendChild(categoryToggle);
+        });
+    };
+
+    chrome.storage.local.get(['blockedCategories', 'isCustomListEnabled'], renderToggles);
 });
