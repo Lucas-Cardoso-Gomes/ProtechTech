@@ -8,6 +8,8 @@ Esta extensão atua como um filtro de navegação, bloqueando ativamente o acess
 
 ### ✨ Funcionalidades Principais
 
+* **Noticias:** Fique atualizado nas ultimas soticionas sobre segurança digital.
+
 * **Bloqueio por Categorias:** Bloqueia sites que se enquadram em diversas categorias de ameaças, como:
     * Phishing
     * Scam
