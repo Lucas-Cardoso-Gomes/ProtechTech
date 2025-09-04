@@ -130,16 +130,39 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Category Toggles ---
     const categories = [
-        'phishing', 'malware', 'scam', 'crypto', 'bitcoin', 'cryptojacking',
+        'phishing', 'malware', 'bitcoin', 'cryptojacking',
         'ddos', 'fakenews', 'hacking', 'gambling'
     ];
 
-    const createToggle = (labelText, isChecked, onToggle) => {
+    const getCategoryCounts = async () => {
+        const counts = {};
+        for (const category of categories) {
+            try {
+                const response = await fetch(`Lists/${category}.json`);
+                if (response.ok) {
+                    const data = await response.json();
+                    counts[category] = data.length;
+                } else {
+                    counts[category] = 0;
+                }
+            } catch (error) {
+                console.error(`Error loading category ${category}:`, error);
+                counts[category] = 0;
+            }
+        }
+        return counts;
+    };
+
+    const createToggle = (labelText, count, isChecked, onToggle) => {
         const toggleContainer = document.createElement('div');
         toggleContainer.className = 'category-toggle';
 
         const label = document.createElement('span');
-        label.textContent = labelText;
+        if (count !== null) {
+            label.textContent = `${labelText} (${count} sites)`;
+        } else {
+            label.textContent = labelText;
+        }
 
         const switchLabel = document.createElement('label');
         switchLabel.className = 'switch';
@@ -158,11 +181,13 @@ document.addEventListener('DOMContentLoaded', () => {
         return toggleContainer;
     };
 
-    const renderToggles = ({ blockedCategories = [], isCustomListEnabled = true }) => {
+    const renderToggles = async ({ blockedCategories = [], isCustomListEnabled = true }) => {
         categoryTogglesContainer.innerHTML = '<h3>Bloqueio por Categoria</h3>';
         
+        const counts = await getCategoryCounts();
+
         // Render Custom List Toggle
-        const customListToggle = createToggle('Lista Personalizada', isCustomListEnabled, (isChecked) => {
+        const customListToggle = createToggle('Lista Personalizada', null, isCustomListEnabled, (isChecked) => {
             chrome.storage.local.set({ isCustomListEnabled: isChecked });
         });
         categoryTogglesContainer.appendChild(customListToggle);
@@ -173,6 +198,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const isBlocked = currentBlocked.includes(category);
             const categoryToggle = createToggle(
                 category.charAt(0).toUpperCase() + category.slice(1),
+                counts[category] || 0,
                 isBlocked,
                 (isChecked) => {
                     if (isChecked) {
@@ -189,5 +215,5 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
-    chrome.storage.local.get(['blockedCategories', 'isCustomListEnabled'], renderToggles);
+    chrome.storage.local.get(['blockedCategories', 'isCustomListEnabled'], (data) => renderToggles(data));
 });
