@@ -1,24 +1,22 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // General elements
     const toggleSwitch = document.getElementById('toggleSwitch');
     const statusText = document.getElementById('statusText');
 
-    // Main view elements
     const domainInput = document.getElementById('domainInput');
     const addDomainBtn = document.getElementById('addDomainBtn');
     const customBlacklistUI = document.getElementById('customBlacklistUI');
+    const whitelistDomainInput = document.getElementById('whitelistDomainInput');
+    const addWhitelistDomainBtn = document.getElementById('addWhitelistDomainBtn');
+    const customWhitelistUI = document.getElementById('customWhitelistUI');
     const newsContainer = document.getElementById('news-container');
 
-    // View switching elements
     const settingsBtn = document.getElementById('settingsBtn');
     const backBtn = document.getElementById('backBtn');
     const mainView = document.getElementById('main-view');
     const settingsView = document.getElementById('settings-view');
 
-    // Settings view elements
     const categoryTogglesContainer = document.getElementById('category-toggles');
 
-    // --- General Extension State ---
     chrome.storage.local.get('isEnabled', ({ isEnabled }) => {
         toggleSwitch.checked = !!isEnabled;
         statusText.textContent = isEnabled ? 'Ativado' : 'Desativado';
@@ -31,7 +29,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // --- View Switching ---
     settingsBtn.addEventListener('click', (e) => {
         e.preventDefault();
         mainView.classList.add('hidden');
@@ -44,7 +41,6 @@ document.addEventListener('DOMContentLoaded', () => {
         mainView.classList.remove('hidden');
     });
 
-    // --- Custom Blacklist ---
     const renderBlacklist = (blacklist) => {
         customBlacklistUI.innerHTML = '';
         if (blacklist && blacklist.length > 0) {
@@ -102,7 +98,63 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.key === 'Enter') addDomain();
     });
 
-    // --- News Feed ---
+    const renderWhitelist = (whitelist) => {
+        customWhitelistUI.innerHTML = '';
+        if (whitelist && whitelist.length > 0) {
+            whitelist.forEach(domain => {
+                const li = document.createElement('li');
+                li.textContent = domain;
+                const removeBtn = document.createElement('button');
+                removeBtn.textContent = 'Remover';
+                removeBtn.className = 'remove-btn';
+                removeBtn.addEventListener('click', () => removeWhitelistDomain(domain));
+                li.appendChild(removeBtn);
+                customWhitelistUI.appendChild(li);
+            });
+        } else {
+            const li = document.createElement('li');
+            li.textContent = 'Nenhum domínio adicionado.';
+            li.style.fontStyle = 'italic';
+            li.style.color = '#888';
+            customWhitelistUI.appendChild(li);
+        }
+    };
+
+    const addWhitelistDomain = () => {
+        const domain = whitelistDomainInput.value.trim().toLowerCase();
+        if (domain && domain.includes('.')) {
+            chrome.storage.local.get({ userWhitelist: [] }, ({ userWhitelist }) => {
+                if (!userWhitelist.includes(domain)) {
+                    const updatedWhitelist = [...userWhitelist, domain];
+                    chrome.storage.local.set({ userWhitelist: updatedWhitelist }, () => {
+                        renderWhitelist(updatedWhitelist);
+                        whitelistDomainInput.value = '';
+                    });
+                }
+            });
+        } else {
+            alert("Por favor, insira um domínio válido (ex: exemplo.com).");
+        }
+    };
+
+    const removeWhitelistDomain = (domainToRemove) => {
+        chrome.storage.local.get({ userWhitelist: [] }, ({ userWhitelist }) => {
+            const updatedWhitelist = userWhitelist.filter(d => d !== domainToRemove);
+            chrome.storage.local.set({ userWhitelist: updatedWhitelist }, () => {
+                renderWhitelist(updatedWhitelist);
+            });
+        });
+    };
+
+    chrome.storage.local.get({ userWhitelist: [] }, ({ userWhitelist }) => {
+        renderWhitelist(userWhitelist);
+    });
+
+    addWhitelistDomainBtn.addEventListener('click', addWhitelistDomain);
+    whitelistDomainInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') addWhitelistDomain();
+    });
+
     const mockNews = [
         { title: "Novo golpe de phishing usa IA", description: "Fique atento a e-mails que parecem muito realistas." },
         { title: "Ataques de ransomware em alta", description: "Empresas de tecnologia são os alvos principais." },
@@ -128,7 +180,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     renderNews(mockNews);
 
-    // --- Category Toggles ---
     const categories = [
         'phishing', 'malware', 'bitcoin', 'cryptojacking',
         'ddos', 'fakenews', 'hacking', 'gambling'
@@ -161,13 +212,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const renderToggles = ({ blockedCategories = [], isCustomListEnabled = true }) => {
         categoryTogglesContainer.innerHTML = '<h3>Bloqueio por Categoria</h3>';
         
-        // Render Custom List Toggle
         const customListToggle = createToggle('Lista Personalizada', isCustomListEnabled, (isChecked) => {
             chrome.storage.local.set({ isCustomListEnabled: isChecked });
         });
         categoryTogglesContainer.appendChild(customListToggle);
 
-        // Render Category Toggles
         let currentBlocked = [...blockedCategories];
         categories.forEach(category => {
             const isBlocked = currentBlocked.includes(category);

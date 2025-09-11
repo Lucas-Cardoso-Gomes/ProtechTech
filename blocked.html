@@ -10,6 +10,9 @@
         p { font-size: 18px; }
         .domain { font-weight: bold; color: #d9534f; }
         .category { font-style: italic; }
+        .button-container { margin-top: 20px; }
+        .button { padding: 10px 20px; border: none; border-radius: 5px; color: white; background-color: #28a745; cursor: pointer; font-size: 16px; }
+        .button:hover { background-color: #218838; }
     </style>
 </head>
 <body>
@@ -17,6 +20,9 @@
         <h1>Acesso Bloqueado</h1>
         <p>O site <span id="domain" class="domain"></span> foi bloqueado.</p>
         <p>Motivo: Identificado na categoria de <span id="category" class="category"></span>.</p>
+        <div class="button-container">
+            <button id="addToWhitelistBtn" class="button">Adicionar à Lista Branca</button>
+        </div>
     </div>
     <script src="blocked.js"></script>
 </body>

@@ -5,6 +5,7 @@ const TARGET_CATEGORIES = [
 
 let inMemoryMainBlacklist = {};
 let inMemoryUserBlacklist = [];
+let inMemoryUserWhitelist = [];
 let inMemoryBlockedCategories = [];
 let inMemoryIsCustomListEnabled = true;
 let inMemoryIsEnabled = true;
@@ -12,9 +13,10 @@ let blacklistsLoaded = false;
 
 async function updateInMemoryState() {
     console.time("Tempo para carregar blacklists do storage para a memória");
-    const data = await chrome.storage.local.get(['mainBlacklist', 'userBlacklist', 'blockedCategories', 'isCustomListEnabled', 'isEnabled']);
+    const data = await chrome.storage.local.get(['mainBlacklist', 'userBlacklist', 'userWhitelist', 'blockedCategories', 'isCustomListEnabled', 'isEnabled']);
     inMemoryMainBlacklist = data.mainBlacklist || {};
     inMemoryUserBlacklist = data.userBlacklist || [];
+    inMemoryUserWhitelist = data.userWhitelist || [];
     inMemoryBlockedCategories = data.blockedCategories || [];
     inMemoryIsCustomListEnabled = data.isCustomListEnabled !== false;
     inMemoryIsEnabled = data.isEnabled !== false;
@@ -43,8 +45,9 @@ async function loadInitialBlacklists() {
     
     console.time("Tempo para salvar blacklists no storage");
     await chrome.storage.local.set({ mainBlacklist: allMaliciousDomains });
-    const data = await chrome.storage.local.get({ 
-        userBlacklist: [], 
+    const data = await chrome.storage.local.get({
+        userBlacklist: [],
+        userWhitelist: [],
         blockedCategories: TARGET_CATEGORIES,
         isCustomListEnabled: true,
         isEnabled: true
@@ -67,20 +70,22 @@ async function handleNavigation(details) {
     }
 
     if (!inMemoryIsEnabled) {
-        return; // Do nothing if the extension is disabled
+        return;
     }
 
     const url = new URL(details.url);
     const domain = url.hostname.startsWith('www.') ? url.hostname.substring(4) : url.hostname;
 
+    if (inMemoryUserWhitelist.includes(domain)) {
+        return;
+    }
+
     let blockReason = null;
 
-    // Check custom list first for precedence
     if (inMemoryIsCustomListEnabled && inMemoryUserBlacklist.includes(domain)) {
         blockReason = { domain: domain, category: 'personalizada' };
     }
 
-    // If not on custom list, check main category list
     if (!blockReason) {
         const domainCategory = inMemoryMainBlacklist[domain];
         if (domainCategory && inMemoryBlockedCategories.includes(domainCategory)) {
@@ -89,7 +94,7 @@ async function handleNavigation(details) {
     }
     
     if (blockReason) {
-        const blockedPageUrl = chrome.runtime.getURL(`blocked.html?domain=${blockReason.domain}&category=${blockReason.category}`);
+        const blockedPageUrl = chrome.runtime.getURL(`blocked.html?domain=${blockReason.domain}&category=${blockReason.category}&originalUrl=${encodeURIComponent(details.url)}`);
         chrome.tabs.update(details.tabId, { url: blockedPageUrl });
     }
 }
@@ -97,7 +102,6 @@ async function handleNavigation(details) {
 chrome.runtime.onInstalled.addListener(async (details) => {
     console.log("Evento 'onInstalled' disparado:", details.reason);
 
-    // Mostra a tela de boas-vindas na primeira instalação
     if (details.reason === 'install') {
         const welcomeUrl = chrome.runtime.getURL('welcome.html');
         chrome.tabs.create({ url: welcomeUrl });
@@ -123,7 +127,6 @@ chrome.storage.onChanged.addListener((changes, namespace) => {
     updateInMemoryState();
 });
 
-// Ensures the listener is active on initial load, in case the extension was updated
 if (!chrome.webNavigation.onBeforeNavigate.hasListener(handleNavigation)) {
     chrome.webNavigation.onBeforeNavigate.addListener(handleNavigation);
 }
