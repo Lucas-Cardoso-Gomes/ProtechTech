@@ -96,6 +96,13 @@ async function handleNavigation(details) {
 
 chrome.runtime.onInstalled.addListener(async (details) => {
     console.log("Evento 'onInstalled' disparado:", details.reason);
+
+    // Mostra a tela de boas-vindas na primeira instalação
+    if (details.reason === 'install') {
+        const welcomeUrl = chrome.runtime.getURL('welcome.html');
+        chrome.tabs.create({ url: welcomeUrl });
+    }
+
     await loadInitialBlacklists();
     chrome.webNavigation.onBeforeNavigate.addListener(handleNavigation);
     console.log("Instalação concluída e bloqueio ativado.");
