@@ -237,3 +237,52 @@ hr {
     font-size: 0.9em;
     color: #555;
 }
+
+#customWhitelistUI {
+    list-style: none;
+    padding: 0;
+    max-height: 150px;
+    overflow-y: auto;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+#customWhitelistUI li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px;
+    border-bottom: 1px solid #eee;
+}
+
+#customWhitelistUI li:last-child {
+    border-bottom: none;
+}
+
+.custom-whitelist h2 {
+    font-size: 1.1em;
+    color: #333;
+    margin-bottom: 10px;
+}
+
+#whitelistDomainInput {
+    flex-grow: 1;
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+#addWhitelistDomainBtn {
+    padding: 5px 10px;
+    border: none;
+    background-color: #2196F3;
+    color: white;
+    border-radius: 4px;
+    margin-left: 5px;
+    cursor: pointer;
+}
+
+#addWhitelistDomainBtn:hover {
+    background-color: #1976D2;
+}
