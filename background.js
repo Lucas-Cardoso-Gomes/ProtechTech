@@ -59,6 +59,23 @@ async function loadInitialBlacklists() {
     await updateInMemoryState();
 }
 
+function findBlockedDomain(domain) {
+    const domainParts = domain.split('.');
+    for (let i = 0; i <= domainParts.length - 2; i++) {
+        const domainToCheck = domainParts.slice(i).join('.');
+        
+        if (inMemoryIsCustomListEnabled && inMemoryUserBlacklist.includes(domainToCheck)) {
+            return { domain: domainToCheck, category: 'personalizada' };
+        }
+        
+        const category = inMemoryMainBlacklist[domainToCheck];
+        if (category && inMemoryBlockedCategories.includes(category)) {
+            return { domain: domainToCheck, category: category };
+        }
+    }
+    return null;
+}
+
 async function handleNavigation(details) {
     if (details.frameId !== 0) {
         return;
@@ -80,18 +97,7 @@ async function handleNavigation(details) {
         return;
     }
 
-    let blockReason = null;
-
-    if (inMemoryIsCustomListEnabled && inMemoryUserBlacklist.includes(domain)) {
-        blockReason = { domain: domain, category: 'personalizada' };
-    }
-
-    if (!blockReason) {
-        const domainCategory = inMemoryMainBlacklist[domain];
-        if (domainCategory && inMemoryBlockedCategories.includes(domainCategory)) {
-            blockReason = { domain: domain, category: domainCategory };
-        }
-    }
+    const blockReason = findBlockedDomain(domain);
     
     if (blockReason) {
         const blockedPageUrl = chrome.runtime.getURL(`blocked.html?domain=${blockReason.domain}&category=${blockReason.category}&originalUrl=${encodeURIComponent(details.url)}`);

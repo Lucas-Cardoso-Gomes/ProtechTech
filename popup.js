@@ -64,8 +64,12 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const addDomain = () => {
-        const domain = domainInput.value.trim().toLowerCase();
-        if (domain && domain.includes('.')) {
+        let url = domainInput.value.trim().toLowerCase();
+        if (!url.startsWith('http')) {
+            url = `https://${url}`;
+        }
+        try {
+            const domain = new URL(url).hostname;
             chrome.storage.local.get({ userBlacklist: [] }, ({ userBlacklist }) => {
                 if (!userBlacklist.includes(domain)) {
                     const updatedBlacklist = [...userBlacklist, domain];
@@ -75,7 +79,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
                 }
             });
-        } else {
+        } catch (error) {
             alert("Por favor, insira um domínio válido (ex: exemplo.com).");
         }
     };
@@ -121,8 +125,12 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const addWhitelistDomain = () => {
-        const domain = whitelistDomainInput.value.trim().toLowerCase();
-        if (domain && domain.includes('.')) {
+        let url = whitelistDomainInput.value.trim().toLowerCase();
+        if (!url.startsWith('http')) {
+            url = `https://${url}`;
+        }
+        try {
+            const domain = new URL(url).hostname;
             chrome.storage.local.get({ userWhitelist: [] }, ({ userWhitelist }) => {
                 if (!userWhitelist.includes(domain)) {
                     const updatedWhitelist = [...userWhitelist, domain];
@@ -132,7 +140,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
                 }
             });
-        } else {
+        } catch (error) {
             alert("Por favor, insira um domínio válido (ex: exemplo.com).");
         }
     };
