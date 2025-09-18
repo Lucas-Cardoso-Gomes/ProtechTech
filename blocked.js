@@ -14,11 +14,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (!userWhitelist.includes(domain)) {
                     const updatedWhitelist = [...userWhitelist, domain];
                     chrome.storage.local.set({ userWhitelist: updatedWhitelist }, () => {
-                        if (originalUrl) {
-                            window.location.href = decodeURIComponent(originalUrl);
-                        } else {
-                            window.location.href = `https://${domain}`;
-                        }
+                        chrome.runtime.sendMessage({
+                            action: 'whitelistAndRedirect',
+                            domain: domain,
+                            url: originalUrl ? decodeURIComponent(originalUrl) : `https://${domain}`
+                        });
+                        addToWhitelistBtn.textContent = 'Redirecionando...';
+                        addToWhitelistBtn.disabled = true;
                     });
                 }
             });

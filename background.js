@@ -127,6 +127,17 @@ chrome.storage.onChanged.addListener((changes, namespace) => {
     updateInMemoryState();
 });
 
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (request.action === 'whitelistAndRedirect') {
+        if (request.domain && !inMemoryUserWhitelist.includes(request.domain)) {
+            inMemoryUserWhitelist.push(request.domain);
+        }
+        if (sender.tab && sender.tab.id) {
+            chrome.tabs.update(sender.tab.id, { url: request.url });
+        }
+    }
+});
+
 if (!chrome.webNavigation.onBeforeNavigate.hasListener(handleNavigation)) {
     chrome.webNavigation.onBeforeNavigate.addListener(handleNavigation);
 }
