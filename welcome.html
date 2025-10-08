@@ -15,34 +15,48 @@
         <main>
             <section class="card">
                 <h2>Obrigado por instalar nossa extensão!</h2>
-                <p>Sua segurança online é nossa prioridade.</p>
+                <p>Sua segurança online é nossa prioridade. Para ativar a proteção, por favor, leia e aceite nossos Termos de Uso abaixo.</p>
             </section>
 
             <section class="card important">
                 <h3><span class="highlight">Atenção:</span> Primeira Inicialização</h3>
                 <p>
-                    Na primeira vez que a extensão é instalada, nosso sistema precisa carregar e otimizar as listas de proteção. <strong>Este processo pode levar até 1 minuto.</strong>
+                    Para que a proteção seja ativada, nosso sistema precisa carregar e otimizar as listas de proteção. <strong>Este processo pode levar até 1 minuto após você aceitar os termos.</strong>
                 </p>
                 <p>
-                    Após essa configuração inicial, as próximas inicializações do seu navegador serão rápidas, e a proteção funcionará de forma quase instantânea. Agradecemos sua paciência!
+                    Após essa configuração inicial, as próximas inicializações do seu navegador serão rápidas. Agradecemos sua paciência!
                 </p>
             </section>
 
-            <section class="card">
-                <h3>Como o ProtechTech Funciona?</h3>
-                <p>
-                    Nossa extensão atua como um guardião silencioso, bloqueando ativamente o acesso a sites perigosos conhecidos por phishing, malware, golpes e outras ameaças.
-                </p>
-                <ul>
-                    <li><strong>Proteção Automática:</strong> Navegue com tranquilidade enquanto bloqueamos as ameaças em segundo plano.</li>
-                    <li><strong>Listas Atualizadas:</strong> Usamos listas de domínios maliciosos que são constantemente revisadas.</li>
-                    <li><strong>Personalizável:</strong> Você pode gerenciar as categorias de bloqueio e até adicionar seus próprios sites para bloquear através do ícone da extensão na barra de ferramentas.</li>
-                </ul>
+            <hr>
+
+            <section class="card" id="terms-section">
+                <h2>Termos de Uso</h2>
+                
+                <h3>1. Aceitação dos Termos</h3>
+                <p>Ao clicar em "Aceitar e Instalar", você concorda em cumprir estes Termos de Uso. A extensão ProtechTech ("Serviço") bloqueará o acesso a sites considerados perigosos com base em listas de domínios públicos e personalizadas.</p>
+
+                <h3>2. Coleta de Dados</h3>
+                <p>O ProtechTech opera localmente em seu navegador. <strong>Nós não coletamos ou armazenamos seus dados de navegação ou informações pessoais.</strong> As configurações, como listas de bloqueio personalizadas e categorias selecionadas, são salvas apenas no armazenamento local do seu navegador.</p>
+
+                <h3>3. Isenção de Responsabilidade</h3>
+                <p>O Serviço é fornecido "como está". Embora nos esforcemos para manter nossas listas de bloqueio precisas e atualizadas, não podemos garantir que todos os sites maliciosos serão bloqueados ou que todos os sites bloqueados são de fato perigosos. O uso do serviço é de sua inteira responsabilidade.</p>
+
+                <h3>4. Modificações</h3>
+                <p>Reservamo-nos o direito de modificar estes termos a qualquer momento. As alterações entrarão em vigor após a publicação da versão atualizada.</p>
             </section>
+
+            <div id="acceptance-container">
+                <section class="card important">
+                    <button id="acceptButton" class="button-accept">Aceitar e Instalar a Proteção</button>
+                    <p id="statusMessage" style="display: none; font-weight: bold; text-align: center;"></p>
+                </section>
+            </div>
         </main>
         <footer>
             <p>ProtechTech - Navegação Segura ao seu alcance.</p>
         </footer>
     </div>
+    <script src="welcome.js"></script>
 </body>
 </html>

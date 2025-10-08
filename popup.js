@@ -12,6 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const backBtn = document.getElementById('backBtn');
     const mainView = document.getElementById('main-view');
     const settingsView = document.getElementById('settings-view');
+    const termsLink = document.getElementById('termsLink');
 
     const categoryTogglesContainer = document.getElementById('category-toggles');
 
@@ -37,6 +38,11 @@ document.addEventListener('DOMContentLoaded', () => {
         e.preventDefault();
         settingsView.classList.add('hidden');
         mainView.classList.remove('hidden');
+    });
+
+    termsLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        chrome.tabs.create({ url: chrome.runtime.getURL('welcome.html') });
     });
 
     const renderBlacklist = (blacklist) => {
