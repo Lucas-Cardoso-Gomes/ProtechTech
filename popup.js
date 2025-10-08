@@ -8,8 +8,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const whitelistDomainInput = document.getElementById('whitelistDomainInput');
     const addWhitelistDomainBtn = document.getElementById('addWhitelistDomainBtn');
     const customWhitelistUI = document.getElementById('customWhitelistUI');
-    const newsContainer = document.getElementById('news-container');
-
     const settingsBtn = document.getElementById('settingsBtn');
     const backBtn = document.getElementById('backBtn');
     const mainView = document.getElementById('main-view');
@@ -162,31 +160,6 @@ document.addEventListener('DOMContentLoaded', () => {
     whitelistDomainInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') addWhitelistDomain();
     });
-
-    const mockNews = [
-        { title: "Novo golpe de phishing usa IA", description: "Fique atento a e-mails que parecem muito realistas." },
-        { title: "Ataques de ransomware em alta", description: "Empresas de tecnologia são os alvos principais." },
-        { title: "Falha de segurança em app popular", description: "Atualize seu aplicativo imediatamente para se proteger." }
-    ];
-
-    const renderNews = (news) => {
-        newsContainer.innerHTML = '';
-        news.forEach(item => {
-            const newsItem = document.createElement('div');
-            newsItem.className = 'news-item';
-            const title = document.createElement('div');
-            title.className = 'news-item-title';
-            title.textContent = item.title;
-            const desc = document.createElement('div');
-            desc.className = 'news-item-description';
-            desc.textContent = item.description;
-            newsItem.appendChild(title);
-            newsItem.appendChild(desc);
-            newsContainer.appendChild(newsItem);
-        });
-    };
-
-    renderNews(mockNews);
 
     const categories = [
         'phishing', 'malware', 'bitcoin', 'cryptojacking',
