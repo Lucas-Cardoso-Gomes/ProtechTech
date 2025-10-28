@@ -13,46 +13,6 @@ let inMemoryTermsAccepted = false;
 let inMemoryDnsSetting = 'disabled';
 let blacklistsLoaded = false;
 
-const dnsSettings = {
-    disabled: {
-        value: {
-            mode: 'direct'
-        },
-        levelOfControl: 'controllable_by_this_extension'
-    },
-    malware: {
-        value: {
-            mode: 'pac_script',
-            pacScript: {
-                data: `function FindProxyForURL(url, host) {
-                    return "HTTPS 1.1.1.2:443; HTTPS 1.0.0.2:443";
-                }`
-            }
-        },
-        levelOfControl: 'controlled_by_this_extension'
-    },
-    family: {
-        value: {
-            mode: 'pac_script',
-            pacScript: {
-                data: `function FindProxyForURL(url, host) {
-                    return "HTTPS 1.1.1.3:443; HTTPS 1.0.0.3:443";
-                }`
-            }
-        },
-        levelOfControl: 'controlled_by_this_extension'
-    }
-};
-
-async function applyDnsSetting() {
-    const setting = dnsSettings[inMemoryDnsSetting];
-    if (setting) {
-        chrome.proxy.settings.set({ value: setting.value }, () => {
-            console.log(`DNS setting applied: ${inMemoryDnsSetting}`);
-        });
-    }
-}
-
 async function updateInMemoryState() {
     console.time("Tempo para carregar do armazenamento para a memória");
     const data = await chrome.storage.local.get(['userBlacklist', 'userWhitelist', 'blockedCategories', 'isCustomListEnabled', 'isEnabled', 'termsAccepted', 'dnsSetting']);
@@ -62,11 +22,7 @@ async function updateInMemoryState() {
     inMemoryIsCustomListEnabled = data.isCustomListEnabled !== false;
     inMemoryIsEnabled = data.isEnabled !== false;
     inMemoryTermsAccepted = data.termsAccepted || false;
-    const newDnsSetting = data.dnsSetting || 'disabled';
-    if (newDnsSetting !== inMemoryDnsSetting) {
-        inMemoryDnsSetting = newDnsSetting;
-        applyDnsSetting();
-    }
+    inMemoryDnsSetting = data.dnsSetting || 'disabled';
     blacklistsLoaded = true;
     console.log("Estado foi atualizado na memória. Termos aceitos:", inMemoryTermsAccepted);
     console.timeEnd("Tempo para carregar do armazenamento para a memória");
@@ -140,6 +96,34 @@ function activateBlocking() {
     }
 }
 
+async function checkDomainWithDoH(domain) {
+    if (inMemoryDnsSetting === 'disabled') {
+        return null;
+    }
+
+    const dnsIp = inMemoryDnsSetting === 'malware' ? '1.1.1.2' : '1.1.1.3';
+    const url = `https://${dnsIp}/dns-query?name=${domain}&type=A`;
+
+    try {
+        const response = await fetch(url, {
+            headers: {
+                'accept': 'application/dns-json'
+            }
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            if (data.Answer && data.Answer.some(ans => ans.data === '0.0.0.0')) {
+                return { domain, category: `DNS (${inMemoryDnsSetting})` };
+            }
+        }
+    } catch (error) {
+        console.error(`Erro ao consultar o DoH para o domínio ${domain}:`, error);
+    }
+
+    return null;
+}
+
 function findBlockedDomain(domain) {
     const domainParts = domain.split('.');
     for (let i = 0; i <= domainParts.length - 2; i++) {
@@ -181,7 +165,11 @@ async function handleNavigation(details) {
         return;
     }
 
-    const blockReason = findBlockedDomain(domain);
+    let blockReason = findBlockedDomain(domain);
+
+    if (!blockReason) {
+        blockReason = await checkDomainWithDoH(domain);
+    }
 
     if (blockReason) {
         const blockedPageUrl = chrome.runtime.getURL(`blocked.html?domain=${blockReason.domain}&category=${blockReason.category}&originalUrl=${encodeURIComponent(details.url)}`);
@@ -191,6 +179,7 @@ async function handleNavigation(details) {
 
 chrome.runtime.onInstalled.addListener(async (details) => {
     console.log("Evento 'onInstalled' disparado:", details.reason);
+    chrome.proxy.settings.set({ value: { mode: 'direct' } });
     await updateInMemoryState();
 
     if (details.reason === 'install' && !inMemoryTermsAccepted) {
@@ -199,17 +188,16 @@ chrome.runtime.onInstalled.addListener(async (details) => {
     } else if (inMemoryTermsAccepted) {
         await loadMainBlacklist();
         activateBlocking();
-        applyDnsSetting();
     }
 });
 
 chrome.runtime.onStartup.addListener(async () => {
     console.log("Evento 'onStartup' (navegador iniciado).");
+    chrome.proxy.settings.set({ value: { mode: 'direct' } });
     await updateInMemoryState();
     if (inMemoryTermsAccepted) {
         await loadMainBlacklist();
         activateBlocking();
-        applyDnsSetting();
     }
 });
 
