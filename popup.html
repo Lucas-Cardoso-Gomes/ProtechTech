@@ -42,6 +42,22 @@
                 <h3>Bloqueio por Categoria</h3>
             </div>
             <hr>
+            <div class="dns-settings">
+                <h3>DNS Seguro da Cloudflare</h3>
+                <div class="dns-option">
+                    <input type="radio" id="dns-disabled" name="dns-option" value="disabled" checked>
+                    <label for="dns-disabled">Desabilitado</label>
+                </div>
+                <div class="dns-option">
+                    <input type="radio" id="dns-malware" name="dns-option" value="malware">
+                    <label for="dns-malware">Filtragem de Malware</label>
+                </div>
+                <div class="dns-option">
+                    <input type="radio" id="dns-family" name="dns-option" value="family">
+                    <label for="dns-family">Filtragem de Malware + Conteúdo</label>
+                </div>
+            </div>
+            <hr>
             <div class="custom-blacklist">
                 <h2>Sua Lista de Bloqueio</h2>
                 <div class="input-group">

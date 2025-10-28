@@ -16,6 +16,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const categoryTogglesContainer = document.getElementById('category-toggles');
 
+    const dnsRadios = document.querySelectorAll('input[name="dns-option"]');
+
+    chrome.storage.local.get('dnsSetting', ({ dnsSetting }) => {
+        if (dnsSetting) {
+            document.getElementById(`dns-${dnsSetting}`).checked = true;
+        }
+    });
+
+    dnsRadios.forEach(radio => {
+        radio.addEventListener('change', () => {
+            chrome.storage.local.set({ dnsSetting: radio.value });
+        });
+    });
+
     chrome.storage.local.get('isEnabled', ({ isEnabled }) => {
         toggleSwitch.checked = !!isEnabled;
         statusText.textContent = isEnabled ? 'Ativado' : 'Desativado';

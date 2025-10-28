@@ -10,11 +10,52 @@ let inMemoryBlockedCategories = [];
 let inMemoryIsCustomListEnabled = true;
 let inMemoryIsEnabled = true;
 let inMemoryTermsAccepted = false;
+let inMemoryDnsSetting = 'disabled';
 let blacklistsLoaded = false;
+
+const dnsSettings = {
+    disabled: {
+        value: {
+            mode: 'direct'
+        },
+        levelOfControl: 'controllable_by_this_extension'
+    },
+    malware: {
+        value: {
+            mode: 'pac_script',
+            pacScript: {
+                data: `function FindProxyForURL(url, host) {
+                    return "HTTPS 1.1.1.2:443; HTTPS 1.0.0.2:443";
+                }`
+            }
+        },
+        levelOfControl: 'controlled_by_this_extension'
+    },
+    family: {
+        value: {
+            mode: 'pac_script',
+            pacScript: {
+                data: `function FindProxyForURL(url, host) {
+                    return "HTTPS 1.1.1.3:443; HTTPS 1.0.0.3:443";
+                }`
+            }
+        },
+        levelOfControl: 'controlled_by_this_extension'
+    }
+};
+
+async function applyDnsSetting() {
+    const setting = dnsSettings[inMemoryDnsSetting];
+    if (setting) {
+        chrome.proxy.settings.set({ value: setting.value }, () => {
+            console.log(`DNS setting applied: ${inMemoryDnsSetting}`);
+        });
+    }
+}
 
 async function updateInMemoryState() {
     console.time("Tempo para carregar do armazenamento para a memória");
-    const data = await chrome.storage.local.get(['mainBlacklist', 'userBlacklist', 'userWhitelist', 'blockedCategories', 'isCustomListEnabled', 'isEnabled', 'termsAccepted']);
+    const data = await chrome.storage.local.get(['mainBlacklist', 'userBlacklist', 'userWhitelist', 'blockedCategories', 'isCustomListEnabled', 'isEnabled', 'termsAccepted', 'dnsSetting']);
     inMemoryMainBlacklist = data.mainBlacklist || {};
     inMemoryUserBlacklist = data.userBlacklist || [];
     inMemoryUserWhitelist = data.userWhitelist || [];
@@ -22,6 +63,11 @@ async function updateInMemoryState() {
     inMemoryIsCustomListEnabled = data.isCustomListEnabled !== false;
     inMemoryIsEnabled = data.isEnabled !== false;
     inMemoryTermsAccepted = data.termsAccepted || false;
+    const newDnsSetting = data.dnsSetting || 'disabled';
+    if (newDnsSetting !== inMemoryDnsSetting) {
+        inMemoryDnsSetting = newDnsSetting;
+        applyDnsSetting();
+    }
     blacklistsLoaded = true;
     console.log("Estado foi atualizado na memória. Termos aceitos:", inMemoryTermsAccepted);
     console.timeEnd("Tempo para carregar do armazenamento para a memória");
@@ -53,7 +99,8 @@ async function initializeExtension() {
         blockedCategories: TARGET_CATEGORIES,
         isCustomListEnabled: true,
         isEnabled: true,
-        termsAccepted: true
+        termsAccepted: true,
+        dnsSetting: 'disabled'
     };
     await chrome.storage.local.set(initialData);
     console.timeEnd("Tempo para salvar estado inicial no armazenamento");
@@ -125,6 +172,7 @@ chrome.runtime.onInstalled.addListener(async (details) => {
         chrome.tabs.create({ url: welcomeUrl });
     } else if (inMemoryTermsAccepted) {
         activateBlocking();
+        applyDnsSetting();
     }
 });
 
@@ -133,6 +181,7 @@ chrome.runtime.onStartup.addListener(async () => {
     await updateInMemoryState();
     if (inMemoryTermsAccepted) {
         activateBlocking();
+        applyDnsSetting();
     }
 });
 
