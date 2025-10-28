@@ -55,8 +55,7 @@ async function applyDnsSetting() {
 
 async function updateInMemoryState() {
     console.time("Tempo para carregar do armazenamento para a memória");
-    const data = await chrome.storage.local.get(['mainBlacklist', 'userBlacklist', 'userWhitelist', 'blockedCategories', 'isCustomListEnabled', 'isEnabled', 'termsAccepted', 'dnsSetting']);
-    inMemoryMainBlacklist = data.mainBlacklist || {};
+    const data = await chrome.storage.local.get(['userBlacklist', 'userWhitelist', 'blockedCategories', 'isCustomListEnabled', 'isEnabled', 'termsAccepted', 'dnsSetting']);
     inMemoryUserBlacklist = data.userBlacklist || [];
     inMemoryUserWhitelist = data.userWhitelist || [];
     inMemoryBlockedCategories = data.blockedCategories || [];
@@ -73,27 +72,50 @@ async function updateInMemoryState() {
     console.timeEnd("Tempo para carregar do armazenamento para a memória");
 }
 
-async function initializeExtension() {
-    console.log("Inicializando a extensão após aceitar os termos...");
+async function loadMainBlacklist() {
+    if (Object.keys(inMemoryMainBlacklist).length > 0) {
+        console.log("A blacklist principal já está carregada na memória.");
+        return;
+    }
+
+    console.time("Tempo para carregar a blacklist principal na memória");
     let allMaliciousDomains = {};
 
-    console.time("Tempo para buscar e processar todos os JSONs");
-    for (const category of TARGET_CATEGORIES) {
-        try {
-            const response = await fetch(chrome.runtime.getURL(`Lists/${category}.json`));
+    const fetchPromises = TARGET_CATEGORIES.map(category =>
+        fetch(chrome.runtime.getURL(`Lists/${category}.json`))
+        .then(response => {
             if (response.ok) {
-                const domains = await response.json();
-                Object.assign(allMaliciousDomains, domains);
+                return response.json();
             }
-        } catch (error) {
+            console.warn(`Falha ao carregar a lista para '${category}', status: ${response.status}`);
+            return {};
+        })
+        .catch(error => {
             console.warn(`Erro ao carregar a lista para '${category}':`, error);
-        }
+            return {};
+        })
+    );
+
+    try {
+        const domainLists = await Promise.all(fetchPromises);
+        domainLists.forEach(domains => {
+            Object.assign(allMaliciousDomains, domains);
+        });
+
+        inMemoryMainBlacklist = allMaliciousDomains;
+        console.timeEnd("Tempo para carregar a blacklist principal na memória");
+        console.log(`Blacklist principal carregada na memória com ${Object.keys(inMemoryMainBlacklist).length} domínios.`);
+    } catch (error) {
+        console.error("Erro fatal ao carregar blacklists:", error);
+        console.timeEnd("Tempo para carregar a blacklist principal na memória");
     }
-    console.timeEnd("Tempo para buscar e processar todos os JSONs");
+}
+
+async function initializeExtension() {
+    console.log("Inicializando a extensão após aceitar os termos...");
 
     console.time("Tempo para salvar estado inicial no armazenamento");
     const initialData = {
-        mainBlacklist: allMaliciousDomains,
         userBlacklist: [],
         userWhitelist: [],
         blockedCategories: TARGET_CATEGORIES,
@@ -105,8 +127,8 @@ async function initializeExtension() {
     await chrome.storage.local.set(initialData);
     console.timeEnd("Tempo para salvar estado inicial no armazenamento");
 
-    console.log(`Carregamento do disco concluído. Total de ${Object.keys(allMaliciousDomains).length} domínios.`);
     await updateInMemoryState();
+    await loadMainBlacklist();
     activateBlocking();
     console.log("Inicialização concluída.");
 }
@@ -141,7 +163,11 @@ async function handleNavigation(details) {
     }
 
     if (!blacklistsLoaded) {
-        await updateInMemoryState();
+        await updateInMemoryState(); 
+    }
+    
+    if (Object.keys(inMemoryMainBlacklist).length === 0) {
+        await loadMainBlacklist();
     }
 
     if (!inMemoryIsEnabled) {
@@ -171,6 +197,7 @@ chrome.runtime.onInstalled.addListener(async (details) => {
         const welcomeUrl = chrome.runtime.getURL('welcome.html');
         chrome.tabs.create({ url: welcomeUrl });
     } else if (inMemoryTermsAccepted) {
+        await loadMainBlacklist();
         activateBlocking();
         applyDnsSetting();
     }
@@ -180,6 +207,7 @@ chrome.runtime.onStartup.addListener(async () => {
     console.log("Evento 'onStartup' (navegador iniciado).");
     await updateInMemoryState();
     if (inMemoryTermsAccepted) {
+        await loadMainBlacklist();
         activateBlocking();
         applyDnsSetting();
     }
