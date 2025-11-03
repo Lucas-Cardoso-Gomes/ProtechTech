@@ -1,6 +1,6 @@
 const TARGET_CATEGORIES = [
     'phishing', 'malware', 'bitcoin', 'cryptojacking',
-    'ddos', 'fakenews', 'hacking', 'gambling'
+    'ddos', 'fakenews', 'hacking', 'gambling' , 'publicite'
 ];
 
 let inMemoryMainBlacklist = {};

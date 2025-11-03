@@ -7,7 +7,7 @@ from pathlib import Path
 BLACKLIST_URL = "http://dsi.ut-capitole.fr/blacklists/download/blacklists.tar.gz"
 TARGET_CATEGORIES = [
     'phishing', 'malware', 'bitcoin', 'cryptojacking',
-    'ddos', 'fakenews', 'hacking' ,'gambling'
+    'ddos', 'fakenews', 'hacking' ,'gambling', 'publicite'
 ]
 
 OUTPUT_DIR = Path(__file__).parent

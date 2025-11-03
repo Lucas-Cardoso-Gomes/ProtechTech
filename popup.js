@@ -183,7 +183,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const categories = [
         'phishing', 'malware', 'bitcoin', 'cryptojacking',
-        'ddos', 'fakenews', 'hacking', 'gambling'
+        'ddos', 'fakenews', 'hacking', 'gambling' , 'publicite'
     ];
 
     const createToggle = (labelText, isChecked, onToggle) => {
