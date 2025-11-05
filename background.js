@@ -67,32 +67,13 @@ async function loadMainBlacklist() {
     }
 }
 
-async function initializeExtension() {
-    console.log("Inicializando a extensão após aceitar os termos...");
-
-    console.time("Tempo para salvar estado inicial no armazenamento");
-    const initialData = {
-        userBlacklist: [],
-        userWhitelist: [],
-        blockedCategories: TARGET_CATEGORIES,
-        isCustomListEnabled: true,
-        isEnabled: true,
-        termsAccepted: true,
-        dnsSetting: 'disabled'
-    };
-    await chrome.storage.local.set(initialData);
-    console.timeEnd("Tempo para salvar estado inicial no armazenamento");
-
+async function initialize() {
     await updateInMemoryState();
-    await loadMainBlacklist();
-    activateBlocking();
-    console.log("Inicialização concluída.");
-}
-
-function activateBlocking() {
-    if (!chrome.webNavigation.onBeforeNavigate.hasListener(handleNavigation)) {
-        chrome.webNavigation.onBeforeNavigate.addListener(handleNavigation);
-        console.log("Bloqueio de navegação ativado.");
+    if (inMemoryTermsAccepted) {
+        await loadMainBlacklist();
+        if (!chrome.webNavigation.onBeforeNavigate.hasListener(handleNavigation)) {
+            chrome.webNavigation.onBeforeNavigate.addListener(handleNavigation);
+        }
     }
 }
 
@@ -142,19 +123,7 @@ function findBlockedDomain(domain) {
 }
 
 async function handleNavigation(details) {
-    if (details.frameId !== 0 || !inMemoryTermsAccepted) {
-        return;
-    }
-
-    if (!blacklistsLoaded) {
-        await updateInMemoryState(); 
-    }
-    
-    if (Object.keys(inMemoryMainBlacklist).length === 0) {
-        await loadMainBlacklist();
-    }
-
-    if (!inMemoryIsEnabled) {
+    if (details.frameId !== 0 || !inMemoryTermsAccepted || !inMemoryIsEnabled) {
         return;
     }
 
@@ -177,41 +146,46 @@ async function handleNavigation(details) {
     }
 }
 
-chrome.runtime.onInstalled.addListener(async (details) => {
-    console.log("Evento 'onInstalled' disparado:", details.reason);
-    chrome.proxy.settings.set({ value: { mode: 'direct' } });
-    await updateInMemoryState();
+async function initializeExtension() {
+    console.log("Inicializando a extensão após aceitar os termos...");
+    const initialData = {
+        userBlacklist: [],
+        userWhitelist: [],
+        blockedCategories: TARGET_CATEGORIES,
+        isCustomListEnabled: true,
+        isEnabled: true,
+        termsAccepted: true,
+        dnsSetting: 'disabled'
+    };
+    await chrome.storage.local.set(initialData);
+    await initialize();
+    console.log("Inicialização concluída.");
+}
 
-    if (details.reason === 'install' && !inMemoryTermsAccepted) {
+chrome.runtime.onInstalled.addListener(async (details) => {
+    chrome.proxy.settings.set({ value: { mode: 'direct' } });
+    if (details.reason === 'install') {
         const welcomeUrl = chrome.runtime.getURL('welcome.html');
         chrome.tabs.create({ url: welcomeUrl });
-    } else if (inMemoryTermsAccepted) {
-        await loadMainBlacklist();
-        activateBlocking();
     }
+    initialize();
 });
 
-chrome.runtime.onStartup.addListener(async () => {
-    console.log("Evento 'onStartup' (navegador iniciado).");
+chrome.runtime.onStartup.addListener(() => {
     chrome.proxy.settings.set({ value: { mode: 'direct' } });
-    await updateInMemoryState();
-    if (inMemoryTermsAccepted) {
-        await loadMainBlacklist();
-        activateBlocking();
-    }
+    initialize();
 });
 
 chrome.storage.onChanged.addListener((changes, namespace) => {
-    if (namespace !== 'local') return;
-    console.log("Configurações foram modificadas, atualizando a memória...");
-    updateInMemoryState();
+    if (namespace === 'local') {
+        console.log("Configurações foram modificadas, re-inicializando...");
+        initialize();
+    }
 });
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === 'termsAccepted') {
-        initializeExtension().then(() => {
-            sendResponse({ status: "done" });
-        });
+        initializeExtension().then(() => sendResponse({ status: "done" }));
         return true;
     }
 
