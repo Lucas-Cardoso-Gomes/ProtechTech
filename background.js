@@ -11,7 +11,8 @@ let inMemoryIsCustomListEnabled = true;
 let inMemoryIsEnabled = true;
 let inMemoryTermsAccepted = false;
 let inMemoryDnsSetting = 'disabled';
-let blacklistsLoaded = false;
+
+let initializationPromise = null;
 
 async function updateInMemoryState() {
     console.time("Tempo para carregar do armazenamento para a memória");
@@ -23,7 +24,6 @@ async function updateInMemoryState() {
     inMemoryIsEnabled = data.isEnabled !== false;
     inMemoryTermsAccepted = data.termsAccepted || false;
     inMemoryDnsSetting = data.dnsSetting || 'disabled';
-    blacklistsLoaded = true;
     console.log("Estado foi atualizado na memória. Termos aceitos:", inMemoryTermsAccepted);
     console.timeEnd("Tempo para carregar do armazenamento para a memória");
 }
@@ -67,14 +67,20 @@ async function loadMainBlacklist() {
     }
 }
 
-async function initialize() {
-    await updateInMemoryState();
-    if (inMemoryTermsAccepted) {
-        await loadMainBlacklist();
-        if (!chrome.webNavigation.onBeforeNavigate.hasListener(handleNavigation)) {
-            chrome.webNavigation.onBeforeNavigate.addListener(handleNavigation);
-        }
+async function initializeIfNeeded() {
+    if (initializationPromise) {
+        return initializationPromise;
     }
+    initializationPromise = new Promise(async (resolve) => {
+        console.log("Iniciando a inicialização...");
+        await updateInMemoryState();
+        if (inMemoryTermsAccepted) {
+            await loadMainBlacklist();
+        }
+        console.log("Inicialização concluída.");
+        resolve();
+    });
+    return initializationPromise;
 }
 
 async function checkDomainWithDoH(domain) {
@@ -123,6 +129,8 @@ function findBlockedDomain(domain) {
 }
 
 async function handleNavigation(details) {
+    await initializeIfNeeded();
+
     if (details.frameId !== 0 || !inMemoryTermsAccepted || !inMemoryIsEnabled) {
         return;
     }
@@ -157,29 +165,34 @@ async function initializeExtension() {
         termsAccepted: true,
         dnsSetting: 'disabled'
     };
+    initializationPromise = null;
     await chrome.storage.local.set(initialData);
-    await initialize();
-    console.log("Inicialização concluída.");
+    await initializeIfNeeded();
+    console.log("Inicialização pós-aceite concluída.");
 }
+
+chrome.webNavigation.onBeforeNavigate.addListener(handleNavigation);
 
 chrome.runtime.onInstalled.addListener(async (details) => {
     chrome.proxy.settings.set({ value: { mode: 'direct' } });
     if (details.reason === 'install') {
         const welcomeUrl = chrome.runtime.getURL('welcome.html');
         chrome.tabs.create({ url: welcomeUrl });
+    } else {
+        initializeIfNeeded();
     }
-    initialize();
 });
 
 chrome.runtime.onStartup.addListener(() => {
     chrome.proxy.settings.set({ value: { mode: 'direct' } });
-    initialize();
+    initializeIfNeeded();
 });
 
 chrome.storage.onChanged.addListener((changes, namespace) => {
     if (namespace === 'local') {
-        console.log("Configurações foram modificadas, re-inicializando...");
-        initialize();
+        console.log("Configurações foram modificadas, reinicializando...");
+        initializationPromise = null;
+        initializeIfNeeded();
     }
 });
 
