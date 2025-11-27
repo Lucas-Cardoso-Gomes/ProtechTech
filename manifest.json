@@ -34,5 +34,8 @@
         "<all_urls>"
       ]
     }
+  ],
+  "host_permissions": [
+    "https://api.rss2json.com/*"
   ]
 }
