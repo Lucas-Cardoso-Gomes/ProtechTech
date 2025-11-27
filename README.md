@@ -1,4 +1,4 @@
-# ProtechTech
+# ProTech
 
 Um projeto de extensão para Google Chrome desenvolvido para proteger os usuários contra sites maliciosos, como phishing, scams e outras ameaças online.
 
@@ -33,7 +33,7 @@ Para carregar a extensão no navegador em modo de desenvolvimento:
 2.  Ative o **"Modo de desenvolvedor"** no canto superior direito da página.
 3.  Clique no botão **"Carregar sem compactação"** (Load unpacked).
 4.  Selecione a pasta raiz do seu projeto (a que contém o `manifest.json`).
-5.  A extensão "ProtechTech" aparecerá na sua lista de extensões e estará pronta para uso.
+5.  A extensão "ProTech" aparecerá na sua lista de extensões e estará pronta para uso.
 
 ##### CONTRIBUTORS
-* ProtechTech
+* ProTech
